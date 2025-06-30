@@ -1,0 +1,32 @@
+{
+  "name": "playwright-framework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "allure:generate": "npx allure generate ./allure-results -o ./allure-report",
+    "allure:open": "npx allure open ./allure-report",
+    "test:api": "npx playwright test tests/api",
+    "test:ui": "npx playwright test tests/ui"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^20.12.2",
+    "allure-playwright": "^3.2.1"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "core-js": "^3.41.0",
+    "dotenv": "^16.5.0",
+    "graphql-request": "^7.1.2",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^6.9.7",
+    "npm": "^11.4.1",
+    "playwright": "^1.49.0",
+    "zod": "^3.24.3"
+  }
+}
