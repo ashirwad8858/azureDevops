@@ -89,4 +89,11 @@ jobs:
         continueOnError: true
         env:
           SLACK_BOT_USER_OAUTH_TOKEN: $(SLACK_BOT_USER_OAUTH_TOKEN)
-          SLACK_CHANNEL_ID: $(S
+          SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+          SMTP_SERVER: $(SMTP_SERVER)
+          SMTP_USER: $(SMTP_USER)
+          SMTP_PASSWORD: $(SMTP_PASSWORD)
+          SMTP_PORT: $(SMTP_PORT)
+          SENDER_NAME: $(SENDER_NAME)
+          SENDER_EMAIL: $(SENDER_EMAIL)
+          RECEIVER_EMAIL: $(RECEIVER_EMAIL)
