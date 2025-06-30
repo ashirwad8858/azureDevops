@@ -33,7 +33,7 @@ variables:
   TEST_SUITE: ${{ parameters.testSuite }}
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'myagent'
 
 jobs:
   - job: APITestAutomation
