@@ -54,7 +54,7 @@ jobs:
           echo "Sending Slack and Email notifications"
 
           echo "Sending Slack notifications"
-          node scripts/slackNotifier.js \
+          node slackNotifier.js \
             --slack-bot-user-oauth-token "$(SLACK_BOT_USER_OAUTH_TOKEN)" \
             --slack-channel-id "$(SLACK_CHANNEL_ID)" \
             --executed-by "Azure DevOps Pipeline" \
@@ -68,7 +68,7 @@ jobs:
           echo "Slack notification sent successfully for test run $(Build.BuildNumber)"
 
           echo "Sending Email notifications to $(RECEIVER_EMAIL)"
-          node scripts/emailNotifier.js \
+          node emailNotifier.js \
             --smtp-server "$(SMTP_SERVER)" \
             --smtp-user "$(SMTP_USER)" \
             --smtp-password "$(SMTP_PASSWORD)" \
