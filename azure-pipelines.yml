@@ -47,7 +47,7 @@ jobs:
           versionSpec: '22.14.0'
         displayName: 'Install Node.js'
 
-      - script: npm ci
+      - script: npm install
         displayName: 'Install dependencies'
 
       - script: |
