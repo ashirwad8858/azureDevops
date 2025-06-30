@@ -7,7 +7,9 @@ pr:
   branches:
     include:
       - main
-
+pool:
+  name: myagent
+  
 parameters:
   - name: testEnvironment
     displayName: 'Select Test Environment'
