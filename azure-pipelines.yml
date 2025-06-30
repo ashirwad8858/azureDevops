@@ -1,12 +1,12 @@
 trigger:
   branches:
     include:
-      - utility
+      - main
 
 pr:
   branches:
     include:
-      - master
+      - main
 
 parameters:
   - name: testEnvironment
