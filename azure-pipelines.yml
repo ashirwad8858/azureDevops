@@ -1,0 +1,130 @@
+trigger:
+  branches:
+    include:
+      - utility
+
+pr:
+  branches:
+    include:
+      - master
+
+parameters:
+  - name: testEnvironment
+    displayName: 'Select Test Environment'
+    type: string
+    default: 'Dev'
+    values:
+      - Dev
+      - QA
+      - Staging
+      - Live
+  - name: testSuite
+    displayName: 'Select Test Suite'
+    type: string
+    default: 'All'
+    values:
+      - All
+      - Mutations
+      - Queries
+
+variables:
+  TEST_FRAMEWORK_NAME: 'Automation-Framework'
+  TEST_ENVIRONMENT: ${{ parameters.testEnvironment }}
+  TEST_SUITE: ${{ parameters.testSuite }}
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+  - job: APITestAutomation
+    displayName: 'API Test Automation Framework'
+    variables:
+      - group: ${{ parameters.testEnvironment }}
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '22.14.0'
+        displayName: 'Install Node.js'
+
+      - script: npm ci
+        displayName: 'Install dependencies'
+
+      - script: |
+          echo "Running test suite: $(TEST_SUITE) on $(TEST_ENVIRONMENT) environment"
+          npx playwright test 
+        displayName: 'Run Playwright Tests'
+        env:
+          GRAPHQL_APPLICATION_ENDPOINT: $(GRAPHQL_APPLICATION_ENDPOINT)
+          
+
+      - script: |
+          echo "Generating Allure report and sending notifications"
+          mkdir -p allure-report
+          
+          echo "Check if allure-results directory exists and is not empty"
+          if [ ! -d "./allure-results" ] || [ -z "$(ls -A ./allure-results)" ]; then
+            echo "No allure-results found to generate the report. Skipping report and notifications."
+            exit 0
+          fi
+
+          if npx allure generate ./allure-results -o ./allure-report; then
+            echo "Allure report generated successfully"
+            
+            echo "Sending Slack notifications"
+            node scripts/slackNotifier.js \
+              --slack-bot-user-oauth-token "$(SLACK_BOT_USER_OAUTH_TOKEN)" \
+              --slack-channel-id "$(SLACK_CHANNEL_ID)" \
+              --executed-by "Azure DevOps Pipeline" \
+              --test-framework-name "$(TEST_FRAMEWORK_NAME)" \
+              --test-environment "$(TEST_ENVIRONMENT)" \
+              --test-suite "$(TEST_SUITE)" \
+              --test-run-id "[$(Build.BuildId)]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId))" \
+              --test-report-url "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=ms.vss-test-web.build-test-results-tab" \
+              --test-results "./allure-report/widgets/statistic.json"
+            echo "Slack notification sent successfully for test run $(Build.BuildNumber)"
+
+            echo "Sending Email notifications to $(RECEIVER_EMAIL)"
+            node scripts/emailNotifier.js \
+              --smtp-server "$(SMTP_SERVER)" \
+              --smtp-user "$(SMTP_USER)" \
+              --smtp-password "$(SMTP_PASSWORD)" \
+              --smtp-port "$(SMTP_PORT)" \
+              --sender-name "$(SENDER_NAME)" \
+              --sender-email "$(SENDER_EMAIL)" \
+              --receiver-email "$(RECEIVER_EMAIL)" \
+              --executed-by "Azure DevOps Pipeline" \
+              --test-framework-name "$(TEST_FRAMEWORK_NAME)" \
+              --test-environment "$(TEST_ENVIRONMENT)" \
+              --test-suite "$(TEST_SUITE)" \
+              --test-run-id "[$(Build.BuildId)]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId))" \
+              --test-report-url "$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=ms.vss-test-web.build-test-results-tab" \
+              --test-results "./allure-report/widgets/statistic.json" \
+              --test-results-attachment "./allure-report.zip"
+          else
+            echo "Failed to generate Allure report"
+            exit 1
+          fi
+        displayName: 'Generate Allure Report and Send Notifications'
+        condition: always()
+        continueOnError: true
+        env:
+          SLACK_BOT_USER_OAUTH_TOKEN: $(SLACK_BOT_USER_OAUTH_TOKEN)
+          SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+          SMTP_SERVER: $(SMTP_SERVER)
+          SMTP_USER: $(SMTP_USER)
+          SMTP_PASSWORD: $(SMTP_PASSWORD)
+          SMTP_PORT: $(SMTP_PORT)
+          SENDER_NAME: $(SENDER_NAME)
+          SENDER_EMAIL: $(SENDER_EMAIL)
+          RECEIVER_EMAIL: $(RECEIVER_EMAIL)
+
+      - publish: $(System.DefaultWorkingDirectory)/allure-report
+        artifact: allure-report
+        displayName: 'Publish Allure Report'
+        condition: always()
+
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: 'junit-results/results.xml'
+        condition: always()
